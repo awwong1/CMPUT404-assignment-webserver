@@ -32,18 +32,25 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print(self.data+"\n")
         requestFullData = self.data.splitlines()
         requestData = requestFullData[0].split()
         path = "./www"+requestData[1]
+        message = ""
             
         # path is a file, exists
-        message = ""
         if (os.path.isfile(path)):
-            ctype = path.split(".")[-1]
-            message += ("HTTP/1.1 200 OK\n"+
-                        "Content-Type: text/"+ctype+"\n\n"+
-                        open(path).read())
+            ctype = path.split(".")[-1].lower()
+            if (ctype == "css" or ctype == "html"):
+                message += ("HTTP/1.1 200 OK\n"+
+                            "Content-Type: text/"+ctype+"\n\n"+
+                            open(path).read())
+            else:
+                message += ("HTTP/1.1 415 Unsupported Media Type\n"+
+                            "Content-Type: text/html\n\n"+
+                            "<!DOCTYPE html>\n"+
+                            "<html><body>HTTP/1.1 415 Unsupported Media Type\n"+
+                            "Only *.html and *.css files are accepted."+
+                            "</body></html>")
             
         # path is a directory, index exists
         elif (os.path.isfile(path+"index.html")):
@@ -56,8 +63,8 @@ class MyWebServer(SocketServer.BaseRequestHandler):
             message += ("HTTP/1.1 404 Not Found\n"+
                         "Content-Type: text/html\n\n"+
                         "<!DOCTYPE html>\n"+
-                        "<html><body>HTTP/1.1 404 Not Found</body></html>")
-        print(message)
+                        "<html><body>HTTP/1.1 404 Not Found\n"+
+                        "File not found on server directory.</body></html>")
         self.request.sendall(message)
                 
 if __name__ == "__main__":
