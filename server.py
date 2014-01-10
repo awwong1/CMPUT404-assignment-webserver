@@ -26,14 +26,38 @@ import SocketServer
 
 # try: curl -v -X GET http://127.0.0.1:8080/
 
-
 class MyWebServer(SocketServer.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall("OK")
-
+        print(self.data+"\n")
+        requestFullData = self.data.splitlines()
+        requestData = requestFullData[0].split()
+        path = "./www"+requestData[1]
+            
+        # path is a file, exists
+        message = ""
+        if (os.path.isfile(path)):
+            ctype = path.split(".")[-1]
+            message += ("HTTP/1.1 200 OK\n"+
+                        "Content-Type: text/"+ctype+"\n\n"+
+                        open(path).read())
+            
+        # path is a directory, index exists
+        elif (os.path.isfile(path+"index.html")):
+            message += ("HTTP/1.1 200 OK\n"+
+                        "Content-Type: text/html\n\n"+
+                        open(path+"index.html").read())
+            
+        # doesn't exist, throw a 404
+        else:
+            message += ("HTTP/1.1 404 Not Found\n"+
+                        "Content-Type: text/html\n\n"+
+                        "<!DOCTYPE html>\n"+
+                        "<html><body>HTTP/1.1 404 Not Found</body></html>")
+        print(message)
+        self.request.sendall(message)
+                
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
