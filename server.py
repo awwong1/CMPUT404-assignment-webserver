@@ -27,6 +27,7 @@ import SocketServer
 # try: curl -v -X GET http://127.0.0.1:8080/
 
 import os.path
+import inspect
 
 class MyWebServer(SocketServer.BaseRequestHandler):
     
@@ -34,11 +35,20 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         self.data = self.request.recv(1024).strip()
         requestFullData = self.data.splitlines()
         requestData = requestFullData[0].split()
-        path = "./www"+requestData[1]
+        filedir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) 
+        path = filedir+"/www"+requestData[1]
         message = ""
             
+        # request is a get
+        if (requestData[0].upper() != "GET"):
+            message += ("HTTP/1.1 501 Not Implemented\n"+
+                        "Content-Type text/html\n\n"+
+                        "<!DOCTYPE html>\n"+
+                        "<html><body>HTTP/1.1 501 Not Implemented\n\n"+
+                        "Server only supports GET.</body></html>")
+
         # path is a file, exists
-        if (os.path.isfile(path)):
+        elif (os.path.isfile(path) and filedir in os.path.realpath(path)):
             ctype = path.split(".")[-1].lower()
             if (ctype == "css" or ctype == "html"):
                 message += ("HTTP/1.1 200 OK\n"+
@@ -53,7 +63,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                             "</body></html>")
             
         # path is a directory, index exists
-        elif (os.path.isfile(path+"index.html")):
+        elif (os.path.isfile(path+"index.html") and filedir in os.path.realpath(path)):
             message += ("HTTP/1.1 200 OK\n"+
                         "Content-Type: text/html\n\n"+
                         open(path+"index.html").read())
